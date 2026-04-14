@@ -1,8 +1,10 @@
-G=2
+G=0.1
 ms=10
-WIDTH=1440
+WIDTH=1200
 HEIGHT=800
-FPS=10
-rate=0.5
+FPS=60
+rate=0.001
 strt_rad=20
-max_rad=70
+max_rad=120
+dt=0.7
+friction=0.2

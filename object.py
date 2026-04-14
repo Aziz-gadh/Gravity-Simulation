@@ -1,41 +1,41 @@
 import pygame as pg
-from settings import G,ms
+from settings import G,ms,dt,friction
 from math import sqrt,pi
 
 def mul(ls,cf):
     return [cf*x for x in ls]
 
 class Object(pg.sprite.Sprite):
-    def __init__(self,pos,radius):
+    def __init__(self,pos,radius,locked=True,vel=[0,0]):
         super().__init__()
         self.center=list(pos)
-        self.vel=[0,0]
+        self.vel=vel
         self.mass=pi*ms*(radius**2)
         self.radius=radius
-        self.locked=True
-    def smash(self,obj):
-        if obj==self:
-            return
-        mv1=mul(self.vel,self.mass)
-        mv2=mul(obj.vel,obj.mass)
-        mm=[mv1[0]+mv2[0],mv1[1]+mv2[1]]
+        self.locked=locked
+    def smash(self,group,obj):
         self.mass+=obj.mass
-        self.vel=mul(mm,1/self.mass)
-        self.radius=sqrt(self.mass/(ms*pi))
+        group.add(Object(self.center,sqrt(self.mass/(ms*pi)),locked=False,vel=self.vel))
         obj.kill()
+        self.kill()
     def update(self,group,screen):
+        dv=mul(self.vel,friction/self.mass)
         for obj in group:
             distance=sqrt((obj.center[0]-self.center[0])**2 + (obj.center[1]-self.center[1])**2)
-            if distance==0:
-                self.smash(obj)
+            if self==obj:
                 continue
-            acc=(G*obj.mass)/distance**2
-            cos=(obj.center[0]-self.center[0])/distance
-            sin=(obj.center[1]-self.center[1])/distance
-            dv=[acc*cos,acc*sin]
-            if not self.locked:
-                self.vel=[self.vel[0]+dv[0],self.vel[1]+dv[1]]
-                self.center=[self.vel[0]+self.center[0],self.vel[1]+self.center[1]]
+            elif distance<=self.radius:
+                self.smash(group,obj)
+                continue
+            else:
+                acc=(G*obj.mass)/distance**2
+                cos=(obj.center[0]-self.center[0])/distance
+                sin=(obj.center[1]-self.center[1])/distance
+                dv=[acc*cos,acc*sin]
+        if not self.locked:
+            self.vel=[self.vel[0]+dv[0],self.vel[1]+dv[1]]
+            self.vel=mul(self.vel,dt)
+            self.center=[self.vel[0]+self.center[0],self.vel[1]+self.center[1]]
         pg.draw.circle(surface=screen,color='#ffffff',center=(self.center[0],self.center[1]),radius=self.radius)
     def stimulate(self,pos):
         distance=sqrt((pos[0]-self.center[0])**2 + (pos[1]-self.center[1])**2)
